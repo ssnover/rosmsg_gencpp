@@ -13,7 +13,7 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4.1", features = ["derive"] }
-handlebars = "4.3"
+minijinja = "0.30"
 roslibrust_codegen = { path = "../roslibrust/roslibrust_codegen" }
 #roslibrust_codegen = { git = "https://github.com/Carter12s/roslibrust" }
 serde = { version = "1", features = ["derive"] }

@@ -1,13 +1,11 @@
-use handlebars::Handlebars;
-use roslibrust_codegen::parse::{MessageFile, FieldInfo};
+use minijinja::{context, Environment, Template};
+use roslibrust_codegen::parse::{FieldInfo, MessageFile};
 use std::path::{Path, PathBuf};
 
 mod helpers;
 
-const MESSAGE_HEADER_TMPL: &'static str = include_str!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/assets/msg.h.hbs"
-));
+const MESSAGE_HEADER_TMPL: &'static str =
+    include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/msg.h.j2"));
 
 #[derive(Clone, Debug)]
 pub struct IncludedNamespace {
@@ -24,14 +22,16 @@ pub struct MessageGenOpts {
     pub includes: Vec<IncludedNamespace>,
 }
 
-pub fn generate_message(msg_path: &Path, opts: &MessageGenOpts) -> Result<String, ()> {
+pub fn generate_message(
+    msg_path: &Path,
+    opts: &MessageGenOpts,
+) -> Result<String, minijinja::Error> {
     let search_paths = opts.includes.iter().map(|inc| inc.path.clone()).collect();
     let msgs = roslibrust_codegen::find_and_parse_ros_messages(search_paths);
 
-    let mut handlebars = Handlebars::new();
-    handlebars.register_helper("upper", Box::new(helpers::upper));
-    handlebars.register_helper("is_header", Box::new(helpers::is_header));
-    handlebars.register_template_string("msg.h", MESSAGE_HEADER_TMPL).unwrap();
+    let mut env = Environment::new();
+    env.add_function("is_header", helpers::is_header);
+    env.add_template("msg.h", MESSAGE_HEADER_TMPL).unwrap();
 
     let message_name = msg_path.file_stem().unwrap().to_str().unwrap().to_owned();
     match msgs {
@@ -39,11 +39,19 @@ pub fn generate_message(msg_path: &Path, opts: &MessageGenOpts) -> Result<String
             match msgs.iter().find(|parsed_msg| {
                 parsed_msg.name == message_name && parsed_msg.package == opts.package
             }) {
-                Some(parsed_msg) => fill_message_template(&handlebars, parsed_msg),
-                None => Err(()),
+                Some(parsed_msg) => {
+                    fill_message_template(&env.get_template("msg.h").unwrap(), parsed_msg)
+                }
+                None => Err(minijinja::Error::new(
+                    minijinja::ErrorKind::UndefinedError,
+                    "Message not found in search paths",
+                )),
             }
         }
-        _ => Err(()),
+        _ => Err(minijinja::Error::new(
+            minijinja::ErrorKind::UndefinedError,
+            "No messages found",
+        )),
     }
 }
 
@@ -76,7 +84,11 @@ impl MessageSpecification {
         let mut spec = Self {
             short_name: data.name.clone(),
             package: data.package.clone(),
-            fields: data.fields.iter().map(|field| Field::from_roslibrust_field(field)).collect(),
+            fields: data
+                .fields
+                .iter()
+                .map(|field| Field::from_roslibrust_field(field))
+                .collect(),
         };
         spec.fields.iter_mut().for_each(|field| {
             if field.package.is_none() {
@@ -87,9 +99,12 @@ impl MessageSpecification {
     }
 }
 
-fn fill_message_template(registry: &Handlebars, msg_data: &MessageFile) -> Result<String, ()> {
-    let data = serde_json::json!({
-        "spec": MessageSpecification::from_data(msg_data),
-    });
-    Ok(registry.render("msg.h", &data).unwrap())
+fn fill_message_template(
+    template: &Template,
+    msg_data: &MessageFile,
+) -> Result<String, minijinja::Error> {
+    let context = context! {
+        spec => MessageSpecification::from_data(msg_data),
+    };
+    template.render(&context)
 }

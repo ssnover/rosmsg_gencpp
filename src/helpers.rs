@@ -1,5 +1,5 @@
-use handlebars::handlebars_helper;
+use minijinja::value::Value;
 
-handlebars_helper!(upper: |s: String| s.to_uppercase());
-
-handlebars_helper!(is_header: |arg: (String, String)| arg.0 == "std_msgs" && arg.1 == "Header");
+pub fn is_header(value: Value) -> bool {
+    false
+}
