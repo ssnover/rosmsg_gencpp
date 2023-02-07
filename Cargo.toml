@@ -1,0 +1,20 @@
+[package]
+name = "rosmsg_gencpp"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "rosmsg_gencpp"
+path = "src/lib.rs"
+
+[[bin]]
+name = "gencpp"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.1", features = ["derive"] }
+handlebars = "4.3"
+roslibrust_codegen = { path = "../roslibrust/roslibrust_codegen" }
+#roslibrust_codegen = { git = "https://github.com/Carter12s/roslibrust" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

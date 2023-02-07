@@ -1,0 +1,28 @@
+#ifndef {{ upper spec.package }}_MESSAGE_{{ upper spec.short_name }}
+#define {{ upper spec.package }}_MESSAGE_{{ upper spec.short_name }}
+
+#include <string>
+#include <vector>
+#include <memory>
+
+#include <ros/types.h>
+#include <ros/serialization.h>
+#include <ros/builtin_message_traits.h>
+#include <ros/message_operations.h>
+
+{{#each spec.fields }}
+#include <{{ this.package }}/{{ this.field_type }}.h>
+{{/each}}
+
+namespace {{ spec.package }} {
+
+template <class ContainerAllocator>
+struct {{ spec.short_name }}_
+{
+  typedef {{ spec.short_name }}_<ContainerAllocator> Type;
+};
+
+
+} // namespace {{ spec.package }}
+
+#endif // {{ upper spec.package }}_MESSAGE_{{ upper spec.short_name }}
