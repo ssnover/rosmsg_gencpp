@@ -30,6 +30,7 @@ pub fn generate_message(
     let msgs = roslibrust_codegen::find_and_parse_ros_messages(search_paths);
 
     let mut env = Environment::new();
+    env.add_filter("append", helpers::append);
     env.add_function("is_header", helpers::is_header);
     env.add_template("msg.h", MESSAGE_HEADER_TMPL).unwrap();
 
@@ -77,6 +78,9 @@ struct MessageSpecification {
     pub short_name: String,
     pub package: String,
     pub fields: Vec<Field>,
+    pub md5sum_first: String,
+    pub md5sum_second: String,
+    pub description: String,
 }
 
 impl MessageSpecification {
@@ -89,6 +93,9 @@ impl MessageSpecification {
                 .iter()
                 .map(|field| Field::from_roslibrust_field(field))
                 .collect(),
+            md5sum_first: String::from("ac26ce75a41384fa"),
+            md5sum_second: String::from("8bb4dc10f491ab90"),
+            description: String::from("Not a real description"),
         };
         spec.fields.iter_mut().for_each(|field| {
             if field.package.is_none() {
